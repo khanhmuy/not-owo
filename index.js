@@ -113,13 +113,10 @@ client.on('interactionCreate', async interaction => {
 client.login(client.token);
 
 // Global env for osu! API
-//global.osuAPI = process.env.OSU_CLIENT_ID;
-//global.osuSecret = process.env.OSU_CLIENT_SECRET;
+const lazerUsername = process.env.OSU_LAZER_USERNAME;
+const lazerPassword = process.env.OSU_LAZER_PASSWORD;
 const {auth, v2} = require('osu-api-extended');
 const login = async () => {
-	//await auth.login(global.osuAPI, global.osuSecret);
-	await auth.login_lazer('hmuy', 'Khanhhuy123');
-	//const data = await v2.beatmap.id.details(1256136)
-	//console.log(data);
+	await auth.login_lazer(lazerUsername, lazerPassword);
 }
 login();
