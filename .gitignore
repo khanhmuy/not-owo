@@ -1,0 +1,17 @@
+# dependencies
+/node_modules
+
+# System Files
+.DS_Store
+thumbs.db
+
+# IDE stuff
+/.idea
+/.vscode
+
+# Config Files
+/data
+.env
+
+package-lock.json
+pnpm-lock.yaml
