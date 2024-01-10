@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const user = interaction.options.getString('user');
-        if (user === null) {
+        if (user === undefined || user === null) {
             const osuId = interaction.client.data.get(`user.${interaction.user.id}.osuId`);
             if (osuId === null) return interaction.editReply({content: 'You must provide a user.', ephemeral: true});
             const res = await v2.user.details(osuId);

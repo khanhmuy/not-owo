@@ -6,7 +6,20 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('map')
         .setDescription('Get map info from ID, URL or search')
-        .addStringOption(option => option.setName('map').setDescription('Map ID or search query').setRequired(true)),
+        .addStringOption(option => option.setName('map').setDescription('Map ID or search query').setRequired(true))
+        .addStringOption(option => option.setName('status')
+            .setDescription('Status of the beatmap set to search for')
+            .setRequired(false)
+            .addChoices(
+                {name: "Ranked", value: "ranked"},
+                {name: "Qualified", value: "qualified"},
+                {name: "Loved", value: "loved"},
+                {name: "Favourites", value: "favourites"},
+                {name: "Pending", value: "pending"},
+                {name: "WIP", value: "wip"},
+                {name: "Graveyard", value: "graveyard"},
+            )
+        ),
     async execute(interaction) {
         await interaction.deferReply();
         const input = interaction.options.getString('map');
@@ -15,8 +28,14 @@ module.exports = {
         if (isnum === true) {
             bm = await v2.beatmap.set.details(input);
         } else {
-            const response = await v2.beatmaps.search({query: input, limit: 1});
-            if (response.beatmapsets[0] === undefined) return interaction.editReply({content: 'Map not found.', ephemeral: true});
+            const inputStatus = interaction.options.getString('status');
+            let response = '';
+            if (inputStatus === null) {
+                response = await v2.beatmaps.search({query: input, limit: 1, mode: 'osu'});
+            } else {
+                response = await v2.beatmaps.search({query: input, limit: 1, mode: 'osu', section: inputStatus});
+            }
+            if (response.beatmapsets[0] === undefined) return interaction.editReply({content: 'No maps found.', ephemeral: true});
             const id = response.beatmapsets[0].id;
             bm = await v2.beatmap.set.details(id);
         }
