@@ -31,7 +31,7 @@ module.exports = {
             const inputStatus = interaction.options.getString('status');
             let response = '';
             if (inputStatus === null) {
-                response = await v2.beatmaps.search({query: input, limit: 1, mode: 'osu'});
+                response = await v2.beatmaps.search({query: input, limit: 1, mode: 'osu', section: 'ranked'});
             } else {
                 response = await v2.beatmaps.search({query: input, limit: 1, mode: 'osu', section: inputStatus});
             }
