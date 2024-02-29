@@ -42,48 +42,65 @@ module.exports = {
         function fmtMSS(s){return(s-(s%=60))/60+(9<s?':':':0')+s};
         const date = new Date(bm.submitted_date);
         const dateStr = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-        let status = '';
+        let status, lbState = '';
         switch (bm.ranked){
             case -2:
                 status = '🪦 Graveyard';
+                lbState = 0
                 break;
             case -1:
                 status = '⚒️ WIP';
+                lbState = 0;
                 break;
             case 0:
                 status = '⏱️ Pending';
+                lbState = 0;
                 break;
             case 1:
                 status = '⬆️ Ranked';
+                lbState = 1;
                 break;
             case 2:
                 status = '✅ Approved';
+                lbState = 1;
                 break;
             case 3:
                 status = '☑️ Qualified';
+                lbState = 1;
                 break;
             case 4:
                 status = '💖 Loved';
+                lbState = 1;
                 break;
         }
         let color = null;
         color = await Vibrant.from(bm.covers.cover).getPalette()
         color = color.Vibrant.hex;
         const sorted = bm.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating);
-        const top = await v2.scores.beatmap(bm.beatmaps[0].id, {mode: 'osu', type: 'global'});
+
         // what the fuck is this
-        let mods = '';
-        if (top[0].mods.length !== 0) {
-            mods = '+'+top[0].mods.join('')+' - ';
-        } else {
-            mods = ''
+        let mods, pp, top, numberOne = '';
+        top = await v2.scores.beatmap(bm.beatmaps[0].id, {mode: 'osu', type: 'global'});
+        if (lbState == 1) {
+            if (top[0].mods.length !== 0) {
+                mods = '+'+top[0].mods.join('')+' - ';
+            } else {
+                mods = ''
+            }
+            try {
+                pp = ' - '+top[0].pp.toFixed(2)+'pp';
+            } catch {
+                pp = ''
+            }
+        } else if (lbState == 0) {
+            mods, pp = '';
         }
-        let pp = '';
         try {
-            pp = ' - '+top[0].pp.toFixed(2)+'pp';
-        } catch {
-            pp = ''
+            numberOne = `\n**#1:** ${top[0].user.username} (${mods}${(top[0].accuracy*100).toFixed(2)}%${pp}) | ${top[0].max_combo}x`
+        } catch (err) {
+            numberOne = ``
         }
+
         const embed = new EmbedBuilder()
             .setAuthor({name: `${bm.creator}`, iconURL: `${bm.user.avatar_url}`, url: `https://osu.ppy.sh/users/${bm.user.id}`})
             .setTitle(`${bm.artist} - ${bm.title}`)
@@ -91,33 +108,44 @@ module.exports = {
             .addFields(
                 {
                     name: `**${bm.beatmaps[0].difficulty_rating}⭐ [${bm.beatmaps[0].version}]**`,
-                    value: `**AR:** ${bm.beatmaps[0].ar} | **OD:** ${bm.beatmaps[0].accuracy} | **CS:** ${bm.beatmaps[0].cs} | **HP:** ${bm.beatmaps[0].drain}\n**Max Combo:** ${bm.beatmaps[0].max_combo}x | **Objects:** ${bm.beatmaps[0].count_circles} | **Sliders:** ${bm.beatmaps[0].count_sliders} | **Spinners:** ${bm.beatmaps[0].count_spinners}\n**#1:** ${top[0].user.username} (${mods}${(top[0].accuracy*100).toFixed(2)}%${pp}) | ${top[0].max_combo}x`
+                    value: `**AR:** ${bm.beatmaps[0].ar} | **OD:** ${bm.beatmaps[0].accuracy} | **CS:** ${bm.beatmaps[0].cs} | **HP:** ${bm.beatmaps[0].drain}\n**Max Combo:** ${bm.beatmaps[0].max_combo}x | **Objects:** ${bm.beatmaps[0].count_circles} | **Sliders:** ${bm.beatmaps[0].count_sliders} | **Spinners:** ${bm.beatmaps[0].count_spinners}${numberOne}`
                 }
             )
             .setColor(color)
             .setURL(`https://osu.ppy.sh/beatmapsets/${bm.id}`)
             .setImage(`${bm.covers.cover}`)
             .setFooter({text: `${status} | ❤️ ${bm.favourite_count} | Submitted ${dateStr}`})
+
         const lowerDiffs = sorted.slice(1, 3); 
         for await (const beatmap of lowerDiffs) {
+            console.log(lbState);
             if (beatmap === bm.beatmaps[0]) return;
             if (beatmap.mode !== 'osu') return;
             const tops = await v2.scores.beatmap(beatmap.id, {mode: 'osu', type: 'global'});
-            let mods = '';
-            if (tops[0].mods.length !== 0) {
-                mods = '+'+tops[0].mods.join('')+' - ';
-            } else {
-                mods = ''
+            let mods, pp, top, numberOne = '';
+            if (lbState == 1) {
+                if (tops[0].mods.length !== 0) {
+                    mods = '+'+tops[0].mods.join('')+' - ';
+                } else {
+                    mods = ''
+                }
+                pp = '';
+                try {
+                    pp = ' - '+tops[0].pp.toFixed(2)+'pp';
+                } catch {
+                    pp = ''
+                }
+            } else if (lbState == 0) {
+                mods, pp = '';
             }
-            let pp = '';
             try {
-                pp = ' - '+tops[0].pp.toFixed(2)+'pp';
-            } catch {
-                pp = ''
+                numberOne = `\n**#1:** ${tops[0].user.username} (${mods}${(tops[0].accuracy*100).toFixed(2)}%${pp}) | ${tops[0].max_combo}x`
+            } catch (err) {
+                numberOne = ``
             }
             const fields = {
                 name: `**${beatmap.difficulty_rating}⭐ [${beatmap.version}]**`,
-                value: `**AR:** ${beatmap.ar} | **OD:** ${beatmap.accuracy} | **CS:** ${beatmap.cs} | **HP:** ${beatmap.drain}\n**Max Combo:** ${beatmap.max_combo} | **Objects:** ${beatmap.count_circles} | **Sliders:** ${beatmap.count_sliders} | **Spinners:** ${beatmap.count_spinners}\n**#1:** ${tops[0].user.username} (${mods}${(tops[0].accuracy*100).toFixed(2)}%${pp}) | ${tops[0].max_combo}x`
+                value: `**AR:** ${beatmap.ar} | **OD:** ${beatmap.accuracy} | **CS:** ${beatmap.cs} | **HP:** ${beatmap.drain}\n**Max Combo:** ${beatmap.max_combo} | **Objects:** ${beatmap.count_circles} | **Sliders:** ${beatmap.count_sliders} | **Spinners:** ${beatmap.count_spinners}${numberOne}`
             }
             embed.addFields(fields);
         };
