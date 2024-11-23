@@ -14,5 +14,8 @@ thumbs.db
 .env
 token.json
 
+# indev
+/commands/osu/recent.js
+
 package-lock.json
 pnpm-lock.yaml
