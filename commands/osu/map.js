@@ -24,20 +24,20 @@ module.exports = {
         await interaction.deferReply();
         const input = interaction.options.getString('map');
         let bm = '';
-        let isnum = /^\d+$/.test(input);
+        let isnum = /^[0-9][A-Za-z0-9 -]*$/.test(input);
         if (isnum === true) {
-            bm = await v2.beatmap.set.details(input);
+            bm = await v2.beatmaps.details({type: 'set', id: input});
         } else {
             const inputStatus = interaction.options.getString('status');
             let response = '';
             if (inputStatus === null) {
-                response = await v2.beatmaps.search({query: input, limit: 1, mode: 'osu', section: 'ranked'});
+                response = await v2.search({type: 'beatmaps', query: input, limit: 1, mode: 'osu', status: 'ranked'});
             } else {
-                response = await v2.beatmaps.search({query: input, limit: 1, mode: 'osu', section: inputStatus});
+                response = await v2.search({type: 'beatmaps', query: input, limit: 1, mode: 'osu', status: inputStatus});
             }
             if (response.beatmapsets[0] === undefined) return interaction.editReply({content: 'No maps found.', ephemeral: true});
             const id = response.beatmapsets[0].id;
-            bm = await v2.beatmap.set.details(id);
+            bm = await v2.beatmaps.details({type: 'set', id: id});
         }
         function fmtMSS(s){return(s-(s%=60))/60+(9<s?':':':0')+s};
         const date = new Date(bm.submitted_date);
@@ -80,10 +80,13 @@ module.exports = {
 
         // what the fuck is this
         let mods, pp, top, numberOne = '';
-        top = await v2.scores.beatmap(bm.beatmaps[0].id, {mode: 'osu', type: 'global'});
+        top = await v2.scores.list({type: 'leaderboard', beatmap_id: bm.beatmaps[0].id, mode: 'osu'});
         if (lbState == 1) {
             if (top[0].mods.length !== 0) {
-                mods = '+'+top[0].mods.join('')+' - ';
+                mods = `+`
+                top[0].mods.forEach(mod => {
+                    mods = mods.concat(mod.acronym);
+                })
             } else {
                 mods = ''
             }
@@ -95,12 +98,15 @@ module.exports = {
         } else if (lbState == 0) {
             mods, pp = '';
         }
+        let okCount = top[0].statistics.ok || 0;
+        let mehCount = top[0].statistics.meh || 0;
+        let missCount = top[0].statistics.miss || 0;
         try {
-            numberOne = `\n**#1:** ${top[0].user.username} (${mods}${(top[0].accuracy*100).toFixed(2)}%${pp}) | ${top[0].max_combo}x`
+            numberOne = `\n**#1:** ${top[0].user.username} (${mods}) | ${(top[0].accuracy*100).toFixed(2)}%${pp} | ${top[0].max_combo}x | ${okCount}/${mehCount}/${missCount}`
         } catch (err) {
             numberOne = ``
         }
-
+        
         const embed = new EmbedBuilder()
             .setAuthor({name: `${bm.creator}`, iconURL: `${bm.user.avatar_url}`, url: `https://osu.ppy.sh/users/${bm.user.id}`})
             .setTitle(`${bm.artist} - ${bm.title}`)
@@ -118,14 +124,16 @@ module.exports = {
 
         const lowerDiffs = sorted.slice(1, 3); 
         for await (const beatmap of lowerDiffs) {
-            console.log(lbState);
             if (beatmap === bm.beatmaps[0]) return;
             if (beatmap.mode !== 'osu') return;
-            const tops = await v2.scores.beatmap(beatmap.id, {mode: 'osu', type: 'global'});
+            const tops = await v2.scores.list({type: 'leaderboard', beatmap_id: beatmap.id, mode: 'osu'});
             let mods, pp, top, numberOne = '';
             if (lbState == 1) {
                 if (tops[0].mods.length !== 0) {
-                    mods = '+'+tops[0].mods.join('')+' - ';
+                    mods = `+`
+                    tops[0].mods.forEach(mod => {
+                        mods = mods.concat(mod.acronym);
+                    })
                 } else {
                     mods = ''
                 }
@@ -138,8 +146,11 @@ module.exports = {
             } else if (lbState == 0) {
                 mods, pp = '';
             }
+            let okCount = tops[0].statistics.ok || 0;
+            let mehCount = tops[0].statistics.meh || 0;
+            let missCount = tops[0].statistics.miss || 0;
             try {
-                numberOne = `\n**#1:** ${tops[0].user.username} (${mods}${(tops[0].accuracy*100).toFixed(2)}%${pp}) | ${tops[0].max_combo}x`
+                numberOne = `\n**#1:** ${tops[0].user.username} (${mods}) | ${(tops[0].accuracy*100).toFixed(2)}%${pp} | ${tops[0].max_combo}x |  | ${okCount}/${mehCount}/${missCount}`
             } catch (err) {
                 numberOne = ``
             }

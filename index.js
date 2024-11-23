@@ -113,10 +113,19 @@ client.on('interactionCreate', async interaction => {
 client.login(client.token);
 
 // Global env for osu! API
-const lazerUsername = process.env.OSU_LAZER_USERNAME;
-const lazerPassword = process.env.OSU_LAZER_PASSWORD;
-const {auth, v2} = require('osu-api-extended');
-const login = async () => {
-	await auth.login_lazer(lazerUsername, lazerPassword);
+const clientId = process.env.OSU_CLIENT_ID;
+const clientSecret = process.env.OSU_CLIENT_SECRET;
+const {auth} = require('osu-api-extended');
+async function login(id, secret) {
+	try {
+		await auth.login({
+			type: 'v2',
+			client_id: id,
+			client_secret: secret,
+			cachedTokenPath: './token.json'
+		});
+	} catch (error) {
+		console.log(error);
+	}
 }
-login();
+login(clientId, clientSecret);

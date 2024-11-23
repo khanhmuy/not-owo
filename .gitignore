@@ -12,6 +12,7 @@ thumbs.db
 # Config Files
 /data
 .env
+token.json
 
 package-lock.json
 pnpm-lock.yaml

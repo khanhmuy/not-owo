@@ -15,7 +15,7 @@ module.exports = {
         if (user === undefined || user === null) {
             const osuId = interaction.client.data.get(`user.${interaction.user.id}.osuId`);
             if (osuId === null) return interaction.editReply({content: 'You must provide a user.', ephemeral: true});
-            const res = await v2.user.details(osuId);
+            const res = await v2.users.details({user: osuId, mode: 'osu'});
             let color = null
             color = await Vibrant.from(res.avatar_url).getPalette()
             color = color.Vibrant.hex
@@ -37,11 +37,12 @@ module.exports = {
                 )
             await interaction.editReply({embeds: [embed]});
         } else {
-            const search = await v2.site.search({mode: 'user', query: user});
-            if (search.user.data[0] === undefined || search.user.data[0].username !== user) {
+            const search = await v2.search({type: 'site', mode: 'user', query: user});
+            console.log(search.user.data[0]);
+            if (search.user.data[0] === undefined) {
                 await interaction.editReply({content: 'User not found.', ephemeral: true});
             } else if(search.user.data[0].username) {
-                const res = await v2.user.details(search.user.data[0].id);
+                const res = await v2.users.details({user: search.user.data[0].id, mode: 'osu'});
                 let color = null
                 color = await Vibrant.from(res.avatar_url).getPalette()
                 color = color.Vibrant.hex

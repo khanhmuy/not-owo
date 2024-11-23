@@ -14,7 +14,7 @@ module.exports = {
         await interaction.deferReply({ephemeral: true});
         if (interaction.options.getSubcommand() === 'player') {
             const username = interaction.options.getString('username');
-            const data = await v2.site.search({mode: 'user', query: username});
+            const data = await v2.search({type: 'site', mode: 'user', query: username});
             if (data.user.data[0] === undefined || data.user.data[0].username !== username) {
                 await interaction.editReply({content: 'User not found.', ephemeral: true});
             } else {
